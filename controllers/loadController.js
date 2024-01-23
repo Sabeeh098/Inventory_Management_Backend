@@ -17,7 +17,7 @@ const createLoad = async (req, res) => {
         brand,
       },
       barcode: {
-        imageData: barcodeImage,
+        imageData: barcodeImageData,
       },
     } = req.body;
 console.log(req.body,"'bodddddyyyy-----")

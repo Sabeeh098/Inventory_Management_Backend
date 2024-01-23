@@ -25,19 +25,27 @@ const loadSchema = new mongoose.Schema({
   barcodeImage: {
     type: String, // Assuming you are storing the image data as a base64 string
   },
-  brands: [
-    {
-      brandName: {
-        type: String,
-      },
-      brandTotalPrice: {
-        type: Number,
-      },
-      brandPalletsCount: {
-        type: Number,
-      },
+  isBrand : {
+    type: Boolean,
+    default: false,
+  },
+  brands:[
+   {
+    brand:{
+      type: String,
     },
-  ],
+    totalPrice : {
+      type:Number,
+    },
+    pallets: {
+      type:Number,
+    },
+    barcodeImage : {
+      type: String,
+    }
+  },
+
+] 
 });
 
 const Load = mongoose.model('Load', loadSchema);
