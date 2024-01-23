@@ -14,13 +14,11 @@ const createLoad = async (req, res) => {
         category,
         loadDate,
         skuCode,
-        brand,
-      },
-      barcode: {
-        imageData: barcodeImageData,
+        brands,
+        barcodeImage
       },
     } = req.body;
-console.log(req.body,"'bodddddyyyy-----")
+    console.log(req.body,"'bodddddyyyy-----")
     const newLoad = new Load({
       loadNumber,
       skuNumber: skuCode,
@@ -29,7 +27,7 @@ console.log(req.body,"'bodddddyyyy-----")
       perPalletPrice,
       category,
       loadDate,
-      brand,
+      brands,
       barcodeImage,
     });
 
@@ -75,6 +73,7 @@ const getLoadDetailsById = async (req, res) => {
         category: loadDetails.category,
         loadDate: loadDetails.loadDate,
         barcodeImage: loadDetails.barcodeImage,
+        brands: loadDetails.brands,
       });
     } else {
       res.status(404).json({ message: 'Load not found' });

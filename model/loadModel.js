@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const loadSchema = new mongoose.Schema({
   loadNumber: {
@@ -40,6 +40,9 @@ const loadSchema = new mongoose.Schema({
     pallets: {
       type:Number,
     },
+    skuCode : {
+      type: String,
+    },
     barcodeImage : {
       type: String,
     }
@@ -48,6 +51,6 @@ const loadSchema = new mongoose.Schema({
 ] 
 });
 
-const Load = mongoose.model('Load', loadSchema);
+const Load = mongoose.model("Load", loadSchema);
 
 module.exports = Load;
