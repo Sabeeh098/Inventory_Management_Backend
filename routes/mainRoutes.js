@@ -13,7 +13,10 @@ mainRoutes.get("/print/:palletId", palletController.printBarcode);
 mainRoutes.get('/getLoadDetailsById/:id', loadController.getLoadDetailsById);
 mainRoutes.get('/getBarcodeImage/:id', loadController.getBarcodeImageById);
 
-// Add a new route for fetching load details by SKU code
 mainRoutes.get('/getLoadDetailsBySkuCode/:skuCode', loadController.getLoadDetailsBySkuCode);
+mainRoutes.get('/getBrandDetailsBySkuCode/:skuCode', loadController.getBrandDetailsBySkuCode);
+
+mainRoutes.patch('/updateRemainingPalletsCount/:id', loadController.updateRemainingPalletsCount);
+mainRoutes.post('/updateUsedLoad', loadController.updateUsedLoads);
 
 module.exports = mainRoutes;

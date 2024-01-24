@@ -1,4 +1,5 @@
 const Load = require('../model/loadModel');
+const UsedLoads = require('../model/usedPallet');
 
 const fs = require('fs');
 const path = require('path');
@@ -129,10 +130,74 @@ const getLoadDetailsBySkuCode = async (req, res) => {
   }
 };
 
+const getBrandDetailsBySkuCode = async (req, res) => {
+  try {
+    const { skuCode } = req.params;
+
+    // Retrieve brand details from the database based on the SKU code
+    const brandDetails = await Load.findOne({ 'brands.skuCode': skuCode });
+
+    if (brandDetails) {
+      res.json(brandDetails.brands[0]); // Assuming there is only one brand per SKU for simplicity
+    } else {
+      res.status(404).json({ message: 'Brand not found for SKU code: ' + skuCode });
+    }
+  } catch (error) {
+    console.error('Error fetching brand details by SKU code:', error);
+    res.status(500).json({ message: 'Server Error' });
+  }
+};
+
+const updateRemainingPalletsCount = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { remainingPalletsCount } = req.body;
+
+    await Load.findByIdAndUpdate(id, { remainingPalletsCount: remainingPalletsCount });
+
+    res.status(200).json({ message: 'Remaining pallets count updated successfully' });
+  } catch (error) {
+    console.error('Error updating remaining pallets count:', error);
+    res.status(500).json({ message: 'Server Error' });
+  }
+};
+
+const updateUsedLoads = async (req, res) => {
+  try {
+    const { load, usedPalletsCount } = req.body;
+
+    const existingUsedLoad = await UsedLoads.findOne({ load });
+
+    if (existingUsedLoad) {
+      existingUsedLoad.palletsOut += usedPalletsCount;
+      existingUsedLoad.updatedAt = new Date();
+      await existingUsedLoad.save();
+
+      res.status(200).json(existingUsedLoad);
+    } else {
+      const newUsedLoad = new UsedLoads({
+        load,
+        palletsOut: usedPalletsCount,
+      });
+
+      await newUsedLoad.save();
+
+      res.status(201).json(newUsedLoad);
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server Error' });
+  }
+};
+
+
 module.exports = {
   createLoad,
   getLoads,
   getLoadDetailsById,
   getBarcodeImageById,
   getLoadDetailsBySkuCode,
+  getBrandDetailsBySkuCode,
+  updateRemainingPalletsCount,
+  updateUsedLoads,
 };
