@@ -16,7 +16,7 @@ const loadSchema = new mongoose.Schema({
   remainingPalletsCount: { 
     type: Number,
   },
-  perPalletPrice: {
+  perPalletCost: {
     type: Number,
   },
   category: {
