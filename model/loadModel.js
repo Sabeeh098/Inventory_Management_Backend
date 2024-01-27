@@ -13,8 +13,9 @@ const loadSchema = new mongoose.Schema({
   palletsCount: {
     type: Number,
   },
-  remainingPalletsCount: { 
+  remainingPalletsCount: {
     type: Number,
+    default: 0,
   },
   perPalletCost: {
     type: Number,
@@ -26,32 +27,34 @@ const loadSchema = new mongoose.Schema({
     type: Date,
   },
   barcodeImage: {
-    type: String, 
+    type: String,
   },
-  isBrand : {
+  isBrand: {
     type: Boolean,
     default: false,
   },
-  brands:[
-   {
-    brandName:{
-      type: String,
+  brands: [
+    {
+      brandName: {
+        type: String,
+      },
+      palletNumbers: {
+        type: String,
+      },
+      totalPallet: {
+        type: Number,
+      },
+      totalPrice: {
+        type: Number,
+      },
+      skuCode: {
+        type: String,
+      },
+      barcodeImage: {
+        type: String,
+      },
     },
-    brandTotalPrice : {
-      type:Number,
-    },
-    brandPalletsCount: {
-      type:Number,
-    },
-    skuCode : {
-      type: String,
-    },
-    barcodeImage : {
-      type: String,
-    }
-  },
-
-] 
+  ],
 });
 
 const Load = mongoose.model("Load", loadSchema);
