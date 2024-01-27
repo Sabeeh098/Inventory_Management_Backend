@@ -190,6 +190,52 @@ const updateUsedLoads = async (req, res) => {
   }
 };
 
+const fetchUsedLoadsInfo = async (req, res) => {
+  try {
+    console.log("Fetching used loads information...");
+
+    // Extract search term from the query parameter
+    const searchTerm = req.query.searchTerm || '';
+
+    const result = await UsedLoads.aggregate([
+      {
+        $lookup: {
+          from: "loads",
+          localField: "load",
+          foreignField: "_id",
+          as: "loadDetails",
+        },
+      },
+      {
+        $unwind: "$loadDetails",
+      },
+      {
+        $project: {
+          loadNumber: "$loadDetails.loadNumber",
+          loadCost: "$loadDetails.loadCost",
+          palletsOut: 1, 
+          addedAt: 1, 
+        },
+      },
+      // Add a $match stage for search term
+      {
+        $match: {
+          $or: [
+            { loadNumber: { $regex: searchTerm, $options: 'i' } },
+            // Add more fields to search as needed
+          ],
+        },
+      },
+    ]);
+
+    // Send the result as a JSON response
+    res.json(result);
+  } catch (error) {
+    console.error("Error fetching used loads information:", error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
 module.exports = {
   createLoad,
   getLoads,
@@ -199,4 +245,6 @@ module.exports = {
   getBrandDetailsBySkuCode,
   updateRemainingPalletsCount,
   updateUsedLoads,
+  fetchUsedLoadsInfo,
+
 };

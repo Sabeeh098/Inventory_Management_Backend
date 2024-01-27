@@ -21,6 +21,8 @@ mainRoutes.get('/getBrandDetailsBySkuCode/:skuCode', loadController.getBrandDeta
 mainRoutes.patch('/updateRemainingPalletsCount/:id', loadController.updateRemainingPalletsCount);
 mainRoutes.post('/updateUsedLoad', loadController.updateUsedLoads);
 
+mainRoutes.get("/fetchPurschaseOrder",loadController.fetchUsedLoadsInfo)
+
 mainRoutes.get('/employeeAdmins', userController.fetchEmployeeAdmins);
 mainRoutes.patch('/editEmployee/:id', userController.editEmployee);
 mainRoutes.delete('/deleteEmployee/:id', userController.deleteEmployee);
