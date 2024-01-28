@@ -45,7 +45,19 @@ const createLoad = async (req, res) => {
 
 const getLoads = async (req, res) => {
   try {
-    const loads = await Load.find();
+    const { type } = req.query;
+    let loads = null;
+    if (type == "indicators") {
+      loads = await Load.find({
+        $expr: { $eq: ["$palletsCount", "$remainingPalletsCount"] },
+      });
+    } else if (type == "scans") {
+      loads = await Load.find({
+        $expr: { $ne: ["$palletsCount", "$remainingPalletsCount"] },
+      });
+    } else {
+      loads = await Load.find();
+    }
     res.json(loads);
   } catch (error) {
     console.error(error);
@@ -195,7 +207,7 @@ const fetchUsedLoadsInfo = async (req, res) => {
     console.log("Fetching used loads information...");
 
     // Extract search term from the query parameter
-    const searchTerm = req.query.searchTerm || '';
+    const searchTerm = req.query.searchTerm || "";
 
     const result = await UsedLoads.aggregate([
       {
@@ -213,15 +225,15 @@ const fetchUsedLoadsInfo = async (req, res) => {
         $project: {
           loadNumber: "$loadDetails.loadNumber",
           loadCost: "$loadDetails.loadCost",
-          palletsOut: 1, 
-          addedAt: 1, 
+          palletsOut: 1,
+          addedAt: 1,
         },
       },
       // Add a $match stage for search term
       {
         $match: {
           $or: [
-            { loadNumber: { $regex: searchTerm, $options: 'i' } },
+            { loadNumber: { $regex: searchTerm, $options: "i" } },
             // Add more fields to search as needed
           ],
         },
@@ -232,7 +244,7 @@ const fetchUsedLoadsInfo = async (req, res) => {
     res.json(result);
   } catch (error) {
     console.error("Error fetching used loads information:", error);
-    res.status(500).json({ error: 'Internal Server Error' });
+    res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
@@ -246,5 +258,4 @@ module.exports = {
   updateRemainingPalletsCount,
   updateUsedLoads,
   fetchUsedLoadsInfo,
-
 };
