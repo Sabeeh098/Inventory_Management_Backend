@@ -48,9 +48,7 @@ const getLoads = async (req, res) => {
     const { type } = req.query;
     let loads = null;
     if (type == "indicators") {
-      loads = await Load.find({
-        $expr: { $eq: ["$palletsCount", "$remainingPalletsCount"] },
-      });
+      loads = await Load.find();
     } else if (type == "scans") {
       loads = await Load.find({
         $expr: { $ne: ["$palletsCount", "$remainingPalletsCount"] },
