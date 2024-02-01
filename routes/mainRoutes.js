@@ -22,9 +22,16 @@ mainRoutes.patch('/updateRemainingPalletsCount/:id', loadController.updateRemain
 mainRoutes.post('/updateUsedLoad', loadController.updateUsedLoads);
 
 mainRoutes.get("/fetchPurschaseOrder",loadController.fetchUsedLoadsInfo)
+mainRoutes.get("/recentLoad",loadController.recentLoadFetch)
+mainRoutes.get('/totalLoads', loadController.getTotalLoadsCount);
+mainRoutes.get("/totalPallets",loadController.getTotalPallets)
+mainRoutes.get("/totalRemainingPallets",loadController.getRemainingPallets);
+mainRoutes.get("/totalLoadCost",loadController.getTotalLoadsCost);
+mainRoutes.get("/getNotifications",loadController.getLoadsLessThanOrEqualTo5)
 
 mainRoutes.get('/employeeAdmins', userController.fetchEmployeeAdmins);
 mainRoutes.patch('/editEmployee/:id', userController.editEmployee);
 mainRoutes.delete('/deleteEmployee/:id', userController.deleteEmployee);
+mainRoutes.get("/fetchAdminAndEmployee",userController.fetchAdminAndEmployeeCounts)
 
 module.exports = mainRoutes;

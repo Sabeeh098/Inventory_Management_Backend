@@ -227,7 +227,7 @@ const fetchUsedLoadsInfo = async (req, res) => {
           addedAt: 1,
         },
       },
-      // Add a $match stage for search term
+    
       {
         $match: {
           $or: [
@@ -246,6 +246,111 @@ const fetchUsedLoadsInfo = async (req, res) => {
   }
 };
 
+const recentLoadFetch = async(req, res) => {
+  try {
+   
+    const recentLoads = await Load.find().sort({ loadDate: -1 }).limit(10);
+
+    res.status(200).json(recentLoads);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "An error occurred while fetching recent loads." });
+  }
+};
+
+const getTotalLoadsCount = async (req, res) => {
+  try {
+    const totalLoadsCount = await Load.countDocuments();
+  
+    res.status(200).json({ totalLoadsCount });
+  } catch (error) {
+    console.error('Error getting total loads count:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+const getTotalLoadsCost = async (req, res) => {
+  try {
+    const totalLoadsCost = await Load.aggregate([
+      {
+        $group: {
+          _id: null,
+          totalLoadCost: { $sum: '$loadCost' },
+        },
+      },
+    ]);
+
+  
+    const result = totalLoadsCost.length > 0 ? totalLoadsCost[0].totalLoadCost : 0;
+
+    res.status(200).json({ totalLoadCost: result });
+  
+  } catch (error) {
+    console.error('Error getting total loads cost:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+
+const getTotalPallets = async (req, res) => {
+  try {
+    const loads = await Load.find();
+
+    const totalPallets = loads.reduce((acc, load) => {
+      const loadPallets = load.isBrand
+        ? load.brands.reduce((brandAcc, brand) => brandAcc + brand.totalPallet, 0)
+        : load.palletsCount;
+
+      return acc + loadPallets;
+    }, 0);
+
+    res.json({ totalPallets });
+
+  } catch (error) {
+    console.error("Error fetching total pallets:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+const getRemainingPallets = async (req, res) => {
+  try {
+
+    const result = await Load.aggregate([
+      {
+        $group: {
+          _id: null,
+          totalRemainingPallets: { $sum: '$remainingPalletsCount' },
+        },
+      },
+    ]);
+
+
+    const totalRemainingPallets = result.length > 0 ? result[0].totalRemainingPallets : 0;
+
+    return res.json({ totalRemainingPallets });
+  } catch (error) {
+    console.error('Error fetching remaining pallets:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+const getLoadsLessThanOrEqualTo5 = async (req, res) => {
+  try {
+    const loads = await Load.find({
+      $or: [
+        { palletsCount: { $lte: 5 } },
+        { remainingPalletsCount: { $lte: 5 } },
+      ],
+    });
+
+   
+    res.json(loads);
+  } catch (error) {
+    console.error('Error fetching loads less than or equal to 5:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+
+
 module.exports = {
   createLoad,
   getLoads,
@@ -256,4 +361,10 @@ module.exports = {
   updateRemainingPalletsCount,
   updateUsedLoads,
   fetchUsedLoadsInfo,
+  recentLoadFetch,
+  getTotalLoadsCount,
+  getTotalPallets,
+  getRemainingPallets,
+  getTotalLoadsCost,
+  getLoadsLessThanOrEqualTo5,
 };

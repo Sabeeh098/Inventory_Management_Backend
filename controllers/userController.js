@@ -58,8 +58,26 @@ const deleteEmployee = async (req, res) => {
   }
 };
 
+const fetchAdminAndEmployeeCounts = async (req, res) => {
+  try {
+    const adminCount = await AdminModel.countDocuments({ role: "admin" });
+    const employeeCount = await AdminModel.countDocuments({ role: "employee" });
+
+    res.status(200).json({
+      message: "Admin and employee counts fetched successfully",
+      adminCount,
+      employeeCount,
+    });
+    console.log(adminCount,employeeCount);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ errMsg: "Something Went Wrong" });
+  }
+};
+
 module.exports = {
   fetchEmployeeAdmins,
   editEmployee,
   deleteEmployee,
+  fetchAdminAndEmployeeCounts,
 };
