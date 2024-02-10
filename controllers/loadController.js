@@ -202,7 +202,6 @@ const updateUsedLoads = async (req, res) => {
 
 const fetchUsedLoadsInfo = async (req, res) => {
   try {
-    console.log("Fetching used loads information...");
 
     // Extract search term from the query parameter
     const searchTerm = req.query.searchTerm || "";
@@ -225,6 +224,8 @@ const fetchUsedLoadsInfo = async (req, res) => {
           loadCost: "$loadDetails.loadCost",
           palletsOut: 1,
           addedAt: 1,
+          palletsCount: "$loadDetails.palletsCount",
+          perPalletCost: "$loadDetails.perPalletCost"
         },
       },
     
@@ -240,6 +241,7 @@ const fetchUsedLoadsInfo = async (req, res) => {
 
     // Send the result as a JSON response
     res.json(result);
+    console.log(result);
   } catch (error) {
     console.error("Error fetching used loads information:", error);
     res.status(500).json({ error: "Internal Server Error" });
