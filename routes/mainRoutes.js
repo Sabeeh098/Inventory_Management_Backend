@@ -9,9 +9,12 @@ const mainRoutes = express.Router();
 mainRoutes.post("/login", adminController.adminLogin);
 mainRoutes.post("/admin/addEmployee", adminController.addEmployee);
 
-
+mainRoutes.post("/addCategory",loadController.addCategory)
+mainRoutes.get('/categories',loadController.getAllCategories)
 mainRoutes.post("/addloads", loadController.createLoad);
 mainRoutes.get("/getloads", loadController.getLoads);
+mainRoutes.delete('/loads/:loadId' ,loadController.deleteLoadById );
+mainRoutes.delete('/loads', loadController.deleteLoads)
 mainRoutes.get('/getLoadDetailsById/:id', loadController.getLoadDetailsById);
 mainRoutes.get('/getBarcodeImage/:id', loadController.getBarcodeImageById);
 

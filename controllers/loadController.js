@@ -1,8 +1,66 @@
+const Category = require("../model/categoryModel");
 const Load = require("../model/loadModel");
 const UsedLoads = require("../model/usedPallet");
 
 const fs = require("fs");
 const path = require("path");
+
+const deleteLoadById = async (req, res) => {
+  const loadId = req.params.loadId;
+  try {
+    // Find the load by ID and delete it
+    await Load.findByIdAndDelete(loadId);
+    res.status(200).json({ message: 'Load deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting load:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+const deleteLoads = async (req, res) => {
+  const { loadIds } = req.body;
+
+  try {
+    await Load.deleteMany({ _id: { $in: loadIds } });
+    res.status(200).json({ message: 'Loads deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete loads', details: error });
+  }
+};
+
+const getAllCategories = async (req, res) => {
+  try {
+    const categories = await Category.find();
+
+    res.status(200).json(categories);
+  } catch (error) {
+    console.error('Error fetching categories:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+const addCategory = async (req, res) => {
+  try {
+    const { name } = req.body;
+
+    if (!name) {
+      return res.status(400).json({ error: 'Name is required for category' });
+    }
+
+    const existingCategory = await Category.findOne({ name });
+    if (existingCategory) {
+      return res.status(400).json({ error: 'Category with this name already exists' });
+    }
+
+    const category = new Category({ name });
+    await category.save();
+
+    res.status(201).json(category);
+  } catch (error) {
+    console.error('Error adding category:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
 
 const createLoad = async (req, res) => {
   try {
@@ -48,13 +106,13 @@ const getLoads = async (req, res) => {
     const { type } = req.query;
     let loads = null;
     if (type == "indicators") {
-      loads = await Load.find();
+      loads = await Load.find().populate('category'); // Populate the category field
     } else if (type == "scans") {
       loads = await Load.find({
         $expr: { $ne: ["$palletsCount", "$remainingPalletsCount"] },
-      });
+      }).populate('category'); // Populate the category field
     } else {
-      loads = await Load.find();
+      loads = await Load.find().populate('category'); // Populate the category field
     }
     res.json(loads);
   } catch (error) {
@@ -62,6 +120,7 @@ const getLoads = async (req, res) => {
     res.status(500).json({ message: "Server Error" });
   }
 };
+
 
 const getLoadDetailsById = async (req, res) => {
   try {
@@ -354,6 +413,10 @@ const getLoadsLessThanOrEqualTo5 = async (req, res) => {
 
 
 module.exports = {
+  deleteLoadById,
+  deleteLoads,
+  getAllCategories,
+  addCategory,
   createLoad,
   getLoads,
   getLoadDetailsById,
