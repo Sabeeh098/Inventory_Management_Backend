@@ -127,7 +127,7 @@ const getLoadDetailsById = async (req, res) => {
     const { id } = req.params;
 
     // Retrieve load details from the database based on the load ID
-    const loadDetails = await Load.findById(id);
+    const loadDetails = await Load.findById(id).populate('category');
 
     if (loadDetails) {
       res.json({
