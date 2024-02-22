@@ -25,6 +25,8 @@ mainRoutes.patch('/updateRemainingPalletsCount/:id', loadController.updateRemain
 mainRoutes.post('/updateUsedLoad', loadController.updateUsedLoads);
 
 mainRoutes.get("/fetchPurschaseOrder",loadController.fetchUsedLoadsInfo)
+// mainRoutes.get("/dailyData",loadController.fetchDailyData)
+// mainRoutes.get("/monthlyData",loadController.fetchMonthlyData)
 mainRoutes.get("/recentLoad",loadController.recentLoadFetch)
 mainRoutes.get('/totalLoads', loadController.getTotalLoadsCount);
 mainRoutes.get("/totalPallets",loadController.getTotalPallets)

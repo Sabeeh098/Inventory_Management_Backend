@@ -30,7 +30,7 @@ const deleteLoads = async (req, res) => {
 
 const getAllCategories = async (req, res) => {
   try {
-    const categories = await Category.find();
+    const categories = await Category.find().sort({ _id: -1 });
 
     res.status(200).json(categories);
   } catch (error) {
@@ -38,6 +38,7 @@ const getAllCategories = async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
 
 const addCategory = async (req, res) => {
   try {
@@ -207,7 +208,7 @@ const getBrandDetailsBySkuCode = async (req, res) => {
     const { skuCode } = req.params;
 
     // Retrieve brand details from the database based on the SKU code
-    const brandDetails = await Load.findOne({ "brands.skuCode": skuCode });
+    const brandDetails = await Load.findOne({ "brands.skuCode": skuCode }).populate('category');
 
     if (brandDetails) {
       res.json(brandDetails.brands[0]); // Assuming there is only one brand per SKU for simplicity
@@ -307,10 +308,111 @@ const fetchUsedLoadsInfo = async (req, res) => {
   }
 };
 
+// const fetchDailyData = async (req, res) => {
+//   try {
+//     // Get the current date
+//     const currentDate = new Date();
+//     // Set the time to the beginning of the current day
+//     currentDate.setHours(0, 0, 0, 0);
+
+//     const result = await UsedLoads.aggregate([
+//       {
+//         $lookup: {
+//           from: "loads",
+//           localField: "load",
+//           foreignField: "_id",
+//           as: "loadDetails",
+//         },
+//       },
+//       {
+//         $unwind: "$loadDetails",
+//       },
+//       {
+//         $project: {
+//           loadNumber: "$loadDetails.loadNumber",
+//           loadCost: "$loadDetails.loadCost",
+//           palletsOut: 1,
+//           addedAt: 1,
+//           palletsCount: "$loadDetails.palletsCount",
+//           perPalletCost: "$loadDetails.perPalletCost"
+//         },
+//       },
+//       // Filter data for the current day
+//       {
+//         $match: {
+//           addedAt: {
+//             $gte: currentDate, // Greater than or equal to the beginning of the current day
+//             $lt: new Date(currentDate.getTime() + 24 * 60 * 60 * 1000) // Less than the beginning of the next day
+//           }
+//         }
+//       }
+//     ]);
+
+   
+//     res.json(result);
+//     console.log(result);
+//   } catch (error) {
+//     console.error("Error fetching daily data:", error);
+//     res.status(500).json({ error: "Internal Server Error" });
+//   }
+// };
+
+// const fetchMonthlyData = async (req, res) => {
+//   try {
+//     // Get the current date
+//     const currentDate = new Date();
+//     // Get the first day of the current month
+//     const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+//     // Get the last day of the current month
+//     const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+
+//     const result = await UsedLoads.aggregate([
+//       {
+//         $lookup: {
+//           from: "loads",
+//           localField: "load",
+//           foreignField: "_id",
+//           as: "loadDetails",
+//         },
+//       },
+//       {
+//         $unwind: "$loadDetails",
+//       },
+//       {
+//         $project: {
+//           loadNumber: "$loadDetails.loadNumber",
+//           loadCost: "$loadDetails.loadCost",
+//           palletsOut: 1,
+//           addedAt: 1,
+//           palletsCount: "$loadDetails.palletsCount",
+//           perPalletCost: "$loadDetails.perPalletCost"
+//         },
+//       },
+//       // Filter data for the current month
+//       {
+//         $match: {
+//           addedAt: {
+//             $gte: firstDayOfMonth,
+//             $lte: lastDayOfMonth
+//           }
+//         }
+//       }
+//     ]);
+
+//     // Send the result as a JSON response
+//     res.json(result);
+//     console.log(result);
+//   } catch (error) {
+//     console.error("Error fetching monthly data:", error);
+//     res.status(500).json({ error: "Internal Server Error" });
+//   }
+// };
+
+
 const recentLoadFetch = async(req, res) => {
   try {
    
-    const recentLoads = await Load.find().sort({ loadDate: -1 }).limit(10);
+    const recentLoads = await Load.find().sort({ loadDate: -1 }).limit(10).populate('category');
 
     res.status(200).json(recentLoads);
   } catch (error) {
@@ -400,7 +502,7 @@ const getLoadsLessThanOrEqualTo5 = async (req, res) => {
         { palletsCount: { $lte: 5 } },
         { remainingPalletsCount: { $lte: 5 } },
       ],
-    });
+    }).populate('category');
 
    
     res.json(loads);
@@ -426,6 +528,8 @@ module.exports = {
   updateRemainingPalletsCount,
   updateUsedLoads,
   fetchUsedLoadsInfo,
+  fetchDailyData,
+  fetchMonthlyData,
   recentLoadFetch,
   getTotalLoadsCount,
   getTotalPallets,
