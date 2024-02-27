@@ -11,6 +11,9 @@ mainRoutes.post("/admin/addEmployee", adminController.addEmployee);
 
 mainRoutes.post("/addCategory",loadController.addCategory)
 mainRoutes.get('/categories',loadController.getAllCategories)
+mainRoutes.delete('/categories/:id',loadController.deleteCat)
+mainRoutes.post("/categories/:id",loadController.editCategory)
+  mainRoutes.post("/deleteSelectedCategories",loadController.deleteSelectedCategories)
 mainRoutes.post("/addloads", loadController.createLoad);
 mainRoutes.get("/getloads", loadController.getLoads);
 mainRoutes.delete('/loads/:loadId' ,loadController.deleteLoadById );
@@ -25,9 +28,12 @@ mainRoutes.patch('/updateRemainingPalletsCount/:id', loadController.updateRemain
 mainRoutes.post('/updateUsedLoad', loadController.updateUsedLoads);
 
 mainRoutes.get("/fetchPurschaseOrder",loadController.fetchUsedLoadsInfo)
-// mainRoutes.get("/dailyData",loadController.fetchDailyData)
-// mainRoutes.get("/monthlyData",loadController.fetchMonthlyData)
+mainRoutes.get("/fetchWeekly",loadController.fetchWeeklyData)
+mainRoutes.get("/dailyData",loadController.fetchDailyData)
+mainRoutes.get("/monthlyData",loadController.fetchMonthlyData)  
+mainRoutes.post("/fetchDataForDateRange",loadController.fetchDataByDateRange)
 mainRoutes.get("/recentLoad",loadController.recentLoadFetch)
+
 mainRoutes.get('/totalLoads', loadController.getTotalLoadsCount);
 mainRoutes.get("/totalPallets",loadController.getTotalPallets)
 mainRoutes.get("/totalRemainingPallets",loadController.getRemainingPallets);

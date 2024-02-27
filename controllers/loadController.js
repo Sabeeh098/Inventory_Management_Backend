@@ -63,6 +63,60 @@ const addCategory = async (req, res) => {
   }
 };
 
+const deleteCat = async (req,res) => {
+  try {
+    const categoryId = req.params.id;
+    // Check if the category exists
+    const category = await Category.findById(categoryId);
+    if (!category) {
+      return res.status(404).json({ message: "Category not found" });
+    }
+
+    // If the category exists, delete it
+    await Category.findByIdAndDelete(categoryId);
+    res.status(200).json({ message: "Category deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting category:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+
+const deleteSelectedCategories = async (req, res) => {
+  const { categoryIds } = req.body;
+  console.log(req.body,"Categories Ids");
+  try {
+   
+    await Category.deleteMany({ _id: { $in: categoryIds } });
+    res.status(200).json({ message: 'Selected categories deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting categories:', error);
+    res.status(500).json({ error: 'An error occurred while deleting categories' });
+  }
+};
+
+
+const editCategory = async(req,res) => { 
+  try {
+    const { id } = req.params;
+    const { name } = req.body;
+    console.log(req.params,req.body);
+
+    // Check if category exists
+    const category = await Category.findByIdAndUpdate(id, { name }, { new: true });
+
+    if (!category) {
+      return res.status(404).json({ message: 'Category not found' });
+    }
+
+    res.status(200).json({ message: 'Category updated successfully', category });
+  } catch (error) {
+    console.error('Error updating category:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+}
+
+
 const createLoad = async (req, res) => {
   try {
     const {
@@ -262,9 +316,79 @@ const updateUsedLoads = async (req, res) => {
 
 const fetchUsedLoadsInfo = async (req, res) => {
   try {
-
     // Extract search term from the query parameter
     const searchTerm = req.query.searchTerm || "";
+
+    const result = await UsedLoads.aggregate([
+      {
+        $lookup: {
+          from: "loads",
+          localField: "load",
+          foreignField: "_id",
+          as: "loadDetails",
+        },
+      },
+      {
+        $unwind: "$loadDetails",
+      },
+      {
+        $lookup: {
+          from: "categories", // Assuming your Category model is named 'Category'
+          localField: "loadDetails.category",
+          foreignField: "_id",
+          as: "categoryDetails",
+        },
+      },
+      {
+        $project: {
+          loadNumber: "$loadDetails.loadNumber",
+          loadCost: "$loadDetails.loadCost",
+          palletsOut: 1,
+          addedAt: 1,
+          palletsCount: "$loadDetails.palletsCount",
+          perPalletCost: "$loadDetails.perPalletCost",
+          category: {
+            $arrayElemAt: ["$categoryDetails.categoryName", 0], // Assuming your category field is named 'categoryName'
+          },
+        },
+      },
+      {
+        $match: {
+          $or: [
+            { loadNumber: { $regex: searchTerm, $options: "i" } },
+            // Add more fields to search as needed
+          ],
+        },
+      },
+    ]);
+
+    // Send the result as a JSON response
+    res.json(result);
+    console.log(result);
+  } catch (error) {
+    console.error("Error fetching used loads information:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+
+
+/////////////Reportsss //////////////
+
+const fetchWeeklyData = async (req, res) => {
+  try {
+    // Get the current date
+    const currentDate = new Date();
+    // Set the time to the beginning of the current day
+    currentDate.setHours(0, 0, 0, 0);
+
+    // Calculate the date of the beginning of the week (Sunday)
+    const startOfWeek = new Date(currentDate);
+    startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
+
+    // Calculate the date of the end of the week (Saturday)
+    const endOfWeek = new Date(currentDate);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
 
     const result = await UsedLoads.aggregate([
       {
@@ -288,125 +412,174 @@ const fetchUsedLoadsInfo = async (req, res) => {
           perPalletCost: "$loadDetails.perPalletCost"
         },
       },
-    
+      // Filter data for the current week
       {
         $match: {
-          $or: [
-            { loadNumber: { $regex: searchTerm, $options: "i" } },
-            // Add more fields to search as needed
-          ],
-        },
-      },
+          addedAt: {
+            $gte: startOfWeek, 
+            $lte: endOfWeek
+          }
+        }
+      }
     ]);
 
-    // Send the result as a JSON response
     res.json(result);
-    console.log(result);
+    // console.log(result,"Weekly");
   } catch (error) {
-    console.error("Error fetching used loads information:", error);
+    console.error("Error fetching weekly data:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
-// const fetchDailyData = async (req, res) => {
-//   try {
-//     // Get the current date
-//     const currentDate = new Date();
-//     // Set the time to the beginning of the current day
-//     currentDate.setHours(0, 0, 0, 0);
 
-//     const result = await UsedLoads.aggregate([
-//       {
-//         $lookup: {
-//           from: "loads",
-//           localField: "load",
-//           foreignField: "_id",
-//           as: "loadDetails",
-//         },
-//       },
-//       {
-//         $unwind: "$loadDetails",
-//       },
-//       {
-//         $project: {
-//           loadNumber: "$loadDetails.loadNumber",
-//           loadCost: "$loadDetails.loadCost",
-//           palletsOut: 1,
-//           addedAt: 1,
-//           palletsCount: "$loadDetails.palletsCount",
-//           perPalletCost: "$loadDetails.perPalletCost"
-//         },
-//       },
-//       // Filter data for the current day
-//       {
-//         $match: {
-//           addedAt: {
-//             $gte: currentDate, // Greater than or equal to the beginning of the current day
-//             $lt: new Date(currentDate.getTime() + 24 * 60 * 60 * 1000) // Less than the beginning of the next day
-//           }
-//         }
-//       }
-//     ]);
+const fetchDailyData = async (req, res) => {
+  try {
+    // Get the current date
+    const currentDate = new Date();
+    // Set the time to the beginning of the current day
+    currentDate.setHours(0, 0, 0, 0);
+
+    const result = await UsedLoads.aggregate([
+      {
+        $lookup: {
+          from: "loads",
+          localField: "load",
+          foreignField: "_id",
+          as: "loadDetails",
+        },
+      },
+      {
+        $unwind: "$loadDetails",
+      },
+      {
+        $project: {
+          loadNumber: "$loadDetails.loadNumber",
+          loadCost: "$loadDetails.loadCost",
+          palletsOut: 1,
+          addedAt: 1,
+          palletsCount: "$loadDetails.palletsCount",
+          perPalletCost: "$loadDetails.perPalletCost"
+        },
+      },
+      // Filter data for the current day
+      {
+        $match: {
+          addedAt: {
+            $gte: currentDate, // Greater than or equal to the beginning of the current day
+            $lt: new Date(currentDate.getTime() + 24 * 60 * 60 * 1000) // Less than the beginning of the next day
+          }
+        }
+      }
+    ]);
 
    
-//     res.json(result);
-//     console.log(result);
-//   } catch (error) {
-//     console.error("Error fetching daily data:", error);
-//     res.status(500).json({ error: "Internal Server Error" });
-//   }
-// };
+    res.json(result);
+    // console.log(result,"Result daily");
+  } catch (error) {
+    console.error("Error fetching daily data:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
 
-// const fetchMonthlyData = async (req, res) => {
-//   try {
-//     // Get the current date
-//     const currentDate = new Date();
-//     // Get the first day of the current month
-//     const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-//     // Get the last day of the current month
-//     const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+const fetchMonthlyData = async (req, res) => {
+  try {
+    // Get the current date
+    const currentDate = new Date();
+    // Get the first day of the current month
+    const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+    // Get the last day of the current month
+    const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
 
-//     const result = await UsedLoads.aggregate([
-//       {
-//         $lookup: {
-//           from: "loads",
-//           localField: "load",
-//           foreignField: "_id",
-//           as: "loadDetails",
-//         },
-//       },
-//       {
-//         $unwind: "$loadDetails",
-//       },
-//       {
-//         $project: {
-//           loadNumber: "$loadDetails.loadNumber",
-//           loadCost: "$loadDetails.loadCost",
-//           palletsOut: 1,
-//           addedAt: 1,
-//           palletsCount: "$loadDetails.palletsCount",
-//           perPalletCost: "$loadDetails.perPalletCost"
-//         },
-//       },
-//       // Filter data for the current month
-//       {
-//         $match: {
-//           addedAt: {
-//             $gte: firstDayOfMonth,
-//             $lte: lastDayOfMonth
-//           }
-//         }
-//       }
-//     ]);
+    const result = await UsedLoads.aggregate([
+      {
+        $lookup: {
+          from: "loads",
+          localField: "load",
+          foreignField: "_id",
+          as: "loadDetails",
+        },
+      },
+      {
+        $unwind: "$loadDetails",
+      },
+      {
+        $project: {
+          loadNumber: "$loadDetails.loadNumber",
+          loadCost: "$loadDetails.loadCost",
+          palletsOut: 1,
+          addedAt: 1,
+          palletsCount: "$loadDetails.palletsCount",
+          perPalletCost: "$loadDetails.perPalletCost"
+        },
+      },
+      // Filter data for the current month
+      {
+        $match: {
+          addedAt: {
+            $gte: firstDayOfMonth,
+            $lte: lastDayOfMonth
+          }
+        }
+      }
+    ]);
 
-//     // Send the result as a JSON response
-//     res.json(result);
-//     console.log(result);
-//   } catch (error) {
-//     console.error("Error fetching monthly data:", error);
-//     res.status(500).json({ error: "Internal Server Error" });
-//   }
-// };
+    // Send the result as a JSON response
+    res.json(result);
+    // console.log(result,"Monthly Data");
+  } catch (error) {
+    console.error("Error fetching monthly data:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+const fetchDataByDateRange = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.body;
+
+  
+    console.log("Request body:", req.body); // Log the request body
+
+    // Fetch data from the database based on the provided date range
+    const result = await UsedLoads.aggregate([
+      {
+        $lookup: {
+          from: "loads",
+          localField: "load",
+          foreignField: "_id",
+          as: "loadDetails",
+        },
+      },
+      {
+        $unwind: "$loadDetails",
+      },
+      {
+        $project: {
+          loadNumber: "$loadDetails.loadNumber",
+          loadCost: "$loadDetails.loadCost",
+          palletsOut: 1,
+          addedAt: 1,
+          palletsCount: "$loadDetails.palletsCount",
+          perPalletCost: "$loadDetails.perPalletCost"
+        },
+      },
+      // Filter data for the provided date range
+      {
+        $match: {
+          addedAt: {
+            $gte: new Date(startDate), // Ensure startDate is treated as UTC
+            $lte: new Date(endDate) // Ensure endDate is treated as UTC
+          }
+        }
+      }
+    ]);
+
+    console.log("Data by date range:", result); // Log the data fetched from the database
+    res.json(result);
+  } catch (error) {
+    console.error("Error fetching data by date range:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
 
 
 const recentLoadFetch = async(req, res) => {
@@ -519,6 +692,9 @@ module.exports = {
   deleteLoads,
   getAllCategories,
   addCategory,
+  deleteCat,
+  editCategory,
+  deleteSelectedCategories,
   createLoad,
   getLoads,
   getLoadDetailsById,
@@ -529,7 +705,9 @@ module.exports = {
   updateUsedLoads,
   fetchUsedLoadsInfo,
   fetchDailyData,
+  fetchWeeklyData,
   fetchMonthlyData,
+  fetchDataByDateRange,
   recentLoadFetch,
   getTotalLoadsCount,
   getTotalPallets,
