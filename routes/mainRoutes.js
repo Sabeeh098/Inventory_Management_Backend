@@ -13,6 +13,7 @@ mainRoutes.post("/addCategory",loadController.addCategory)
 mainRoutes.get('/categories',loadController.getAllCategories)
 mainRoutes.delete('/categories/:id',loadController.deleteCat)
 mainRoutes.post("/categories/:id",loadController.editCategory)
+mainRoutes.post('/fetchReportByCategory',loadController.fetchByCategory);
   mainRoutes.post("/deleteSelectedCategories",loadController.deleteSelectedCategories)
 mainRoutes.post("/addloads", loadController.createLoad);
 mainRoutes.get("/getloads", loadController.getLoads);

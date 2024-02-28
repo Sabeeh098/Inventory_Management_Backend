@@ -373,6 +373,67 @@ const fetchUsedLoadsInfo = async (req, res) => {
 
 
 
+const fetchByCategory = async (req, res) => {
+  const categoryId = req.body.categoryId;
+console.log(req.body.categoryId,"id");
+  try {
+    // Find the category by its ID
+    const category = await Category.findById(categoryId);
+
+    if (!category) {
+      return res.status(404).json({ error: 'Category not found' });
+    }
+
+    // Fetch used loads that have the specified category
+    const result = await UsedLoads.aggregate([
+      {
+        $lookup: {
+          from: "loads",
+          localField: "load",
+          foreignField: "_id",
+          as: "loadDetails",
+        },
+      },
+      {
+        $unwind: "$loadDetails",
+      },
+      {
+        $lookup: {
+          from: "categories", 
+          localField: "loadDetails.category",
+          foreignField: "_id",
+          as: "categoryDetails",
+        },
+      },
+      {
+        $unwind: "$categoryDetails",
+      },
+      {
+        $match: {
+          "categoryDetails._id": category._id
+        }
+      },
+      {
+        $project: {
+          loadNumber: "$loadDetails.loadNumber",
+          loadCost: "$loadDetails.loadCost",
+          palletsOut: 1,
+          addedAt: 1,
+          palletsCount: "$loadDetails.palletsCount",
+          perPalletCost: "$loadDetails.perPalletCost",
+          category: "$categoryDetails.name",
+        },
+      },
+    ]);
+
+    console.log(result, "result");
+    res.json(result);
+
+  } catch (error) {
+    console.error('Error fetching report data:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
 /////////////Reportsss //////////////
 
 const fetchWeeklyData = async (req, res) => {
@@ -706,6 +767,7 @@ module.exports = {
   fetchUsedLoadsInfo,
   fetchDailyData,
   fetchWeeklyData,
+  fetchByCategory,
   fetchMonthlyData,
   fetchDataByDateRange,
   recentLoadFetch,
