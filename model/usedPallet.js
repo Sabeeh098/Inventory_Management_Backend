@@ -12,6 +12,9 @@ const usedPalletsSchema = new mongoose.Schema({
     addedAt : {
         type: Date,
         default: Date.now()
+    },
+    total : {
+        type: Number,
     }
 });
 

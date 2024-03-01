@@ -14,6 +14,10 @@ mainRoutes.get('/categories',loadController.getAllCategories)
 mainRoutes.delete('/categories/:id',loadController.deleteCat)
 mainRoutes.post("/categories/:id",loadController.editCategory)
 mainRoutes.post('/fetchReportByCategory',loadController.fetchByCategory);
+mainRoutes.post('/fetchReportByLoadNumber',loadController.fetchByLoadNumber);
+mainRoutes.post('/fetchReportBySku',loadController.fetchBySKU);
+mainRoutes.post('/fetchReportByBrand',loadController.fetchByBrand);
+
   mainRoutes.post("/deleteSelectedCategories",loadController.deleteSelectedCategories)
 mainRoutes.post("/addloads", loadController.createLoad);
 mainRoutes.get("/getloads", loadController.getLoads);
@@ -32,6 +36,7 @@ mainRoutes.get("/fetchPurschaseOrder",loadController.fetchUsedLoadsInfo)
 mainRoutes.get("/fetchWeekly",loadController.fetchWeeklyData)
 mainRoutes.get("/dailyData",loadController.fetchDailyData)
 mainRoutes.get("/monthlyData",loadController.fetchMonthlyData)  
+mainRoutes.get("/yearlyData",loadController.fetchYearlyData)
 mainRoutes.post("/fetchDataForDateRange",loadController.fetchDataByDateRange)
 mainRoutes.get("/recentLoad",loadController.recentLoadFetch)
 

@@ -296,6 +296,15 @@ const updateRemainingPalletsCount = async (req, res) => {
 const updateUsedLoads = async (req, res) => {
   try {
     const { load, usedPalletsCount, remainingPalletsCount } = req.body;
+    // Retrieve the load information to get the per pallet cost
+    const loadInfo = await Load.findById(load);
+    if (!loadInfo) {
+      return res.status(404).json({ message: "Load not found" });
+    }
+
+    // Calculate total cost
+    const totalCost = loadInfo.perPalletCost * usedPalletsCount;
+
     // Update Loads remainingPalletsCount
     await Load.findByIdAndUpdate(load, {
       remainingPalletsCount: remainingPalletsCount + usedPalletsCount,
@@ -305,6 +314,7 @@ const updateUsedLoads = async (req, res) => {
     const newUsedLoad = new UsedLoads({
       load,
       palletsOut: usedPalletsCount,
+      total: totalCost, // Set the total cost
     });
     await newUsedLoad.save();
     res.status(201).json(newUsedLoad);
@@ -422,6 +432,7 @@ console.log(req.body.categoryId,"id");
           palletsCount: "$loadDetails.palletsCount",
           perPalletCost: "$loadDetails.perPalletCost",
           category: "$categoryDetails.name",
+          total: "$total" 
         },
       },
     ]);
@@ -434,6 +445,161 @@ console.log(req.body.categoryId,"id");
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+const fetchByLoadNumber = async (req, res) => {
+  const loadNumber = req.body.loadNumber; // Extracting load number from the request body
+  console.log(loadNumber, "loadNumber"); // Logging the load number
+
+  try {
+    // Fetch used loads that have the specified load number
+    const result = await UsedLoads.aggregate([
+      {
+        $lookup: {
+          from: "loads",
+          localField: "load",
+          foreignField: "_id",
+          as: "loadDetails",
+        },
+      },
+      {
+        $unwind: "$loadDetails",
+      },
+      {
+        $match: {
+          "loadDetails.loadNumber": loadNumber 
+        }
+      },
+      {
+        $lookup: {
+          from: "categories", 
+          localField: "loadDetails.category",
+          foreignField: "_id",
+          as: "categoryDetails",
+        },
+      },
+      {
+        $unwind: "$categoryDetails",
+      },
+      {
+        $project: {
+          loadNumber: "$loadDetails.loadNumber",
+          loadCost: "$loadDetails.loadCost",
+          palletsOut: 1,
+          addedAt: 1,
+          palletsCount: "$loadDetails.palletsCount",
+          perPalletCost: "$loadDetails.perPalletCost",
+          category: "$categoryDetails.name",
+          total: "$total" 
+        },
+      },
+    ]);
+
+    console.log(result, "result");
+    res.json(result);
+
+  } catch (error) {
+    console.error('Error fetching report data:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+const fetchBySKU = async (req, res) => {
+  const sku = req.body.sku; // Extracting SKU (skuCode or skuNumber) from the request body
+  console.log(sku, "sku"); // Logging the SKU
+
+  try {
+    // Fetch used loads that have at least one load with the specified SKU
+    const result = await UsedLoads.aggregate([
+      {
+        $lookup: {
+          from: "loads",
+          localField: "load",
+          foreignField: "_id",
+          as: "loadDetails",
+        },
+      },
+      {
+        $unwind: "$loadDetails",
+      },
+      {
+        $match: {
+          $or: [
+            { "loadDetails.brands.skuCode": sku },
+            { "loadDetails.skuNumber": sku }
+          ]
+        }
+      },
+      {
+        $project: {
+          loadNumber: "$loadDetails.loadNumber",
+          loadCost: "$loadDetails.loadCost",
+          palletsOut: 1,
+          addedAt: 1,
+          palletsCount: "$loadDetails.palletsCount",
+          perPalletCost: "$loadDetails.perPalletCost",
+          category: "$loadDetails.category",
+          total: "$total" 
+        },
+      },
+    ]);
+
+    console.log(result, "result");
+    res.json(result);
+
+  } catch (error) {
+    console.error('Error fetching report data by SKU:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+
+const fetchByBrand = async (req, res) => {
+  const brandName = req.body.brand; // Extracting brand name from the request body
+  console.log(brandName, "brandName"); // Logging the brand name
+
+  try {
+    // Fetch used loads that have at least one load with the specified brand name
+    const result = await UsedLoads.aggregate([
+      {
+        $lookup: {
+          from: "loads",
+          localField: "load",
+          foreignField: "_id",
+          as: "loadDetails",
+        },
+      },
+      {
+        $unwind: "$loadDetails",
+      },
+      {
+        $match: {
+          "loadDetails.brands.brandName": brandName 
+        }
+      },
+      {
+        $project: {
+          loadNumber: "$loadDetails.loadNumber",
+          loadCost: "$loadDetails.loadCost",
+          palletsOut: 1,
+          addedAt: 1,
+          palletsCount: "$loadDetails.palletsCount",
+          perPalletCost: "$loadDetails.perPalletCost",
+          category: "$loadDetails.category",
+          total: "$total" 
+        },
+      },
+    ]);
+
+    console.log(result, "result");
+    res.json(result);
+
+  } catch (error) {
+    console.error('Error fetching report data by brand name:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+
 /////////////Reportsss //////////////
 
 const fetchWeeklyData = async (req, res) => {
@@ -470,7 +636,8 @@ const fetchWeeklyData = async (req, res) => {
           palletsOut: 1,
           addedAt: 1,
           palletsCount: "$loadDetails.palletsCount",
-          perPalletCost: "$loadDetails.perPalletCost"
+          perPalletCost: "$loadDetails.perPalletCost",
+          total: "$total" 
         },
       },
       // Filter data for the current week
@@ -519,7 +686,8 @@ const fetchDailyData = async (req, res) => {
           palletsOut: 1,
           addedAt: 1,
           palletsCount: "$loadDetails.palletsCount",
-          perPalletCost: "$loadDetails.perPalletCost"
+          perPalletCost: "$loadDetails.perPalletCost",
+          total: "$total" ,
         },
       },
       // Filter data for the current day
@@ -544,6 +712,7 @@ const fetchDailyData = async (req, res) => {
 
 const fetchMonthlyData = async (req, res) => {
   try {
+    console.log("Is it coming?");
     // Get the current date
     const currentDate = new Date();
     // Get the first day of the current month
@@ -570,7 +739,8 @@ const fetchMonthlyData = async (req, res) => {
           palletsOut: 1,
           addedAt: 1,
           palletsCount: "$loadDetails.palletsCount",
-          perPalletCost: "$loadDetails.perPalletCost"
+          perPalletCost: "$loadDetails.perPalletCost",
+          total: "$total" 
         },
       },
       // Filter data for the current month
@@ -586,12 +756,68 @@ const fetchMonthlyData = async (req, res) => {
 
     // Send the result as a JSON response
     res.json(result);
-    // console.log(result,"Monthly Data");
+    console.log(result,"Monthly Data");
   } catch (error) {
     console.error("Error fetching monthly data:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
+const fetchYearlyData = async (req, res) => {
+  try {
+    console.log("object");
+    // Get the current date
+    const currentDate = new Date();
+
+    // Set start date to January 1st of the current year and end date to December 31st of the current year
+    const startDate = new Date(currentDate.getFullYear(), 0, 1);
+    const endDate = new Date(currentDate.getFullYear(), 11, 31);
+
+    const result = await UsedLoads.aggregate([
+      {
+        $lookup: {
+          from: "loads",
+          localField: "load",
+          foreignField: "_id",
+          as: "loadDetails",
+        },
+      },
+      {
+        $unwind: "$loadDetails",
+      },
+      {
+        $project: {
+          loadNumber: "$loadDetails.loadNumber",
+          loadCost: "$loadDetails.loadCost",
+          palletsOut: 1,
+          addedAt: 1,
+          palletsCount: "$loadDetails.palletsCount",
+          perPalletCost: "$loadDetails.perPalletCost",
+          total: "$total" 
+        },
+      },
+      // Filter data for the current year
+      {
+        $match: {
+          addedAt: {
+            $gte: startDate,
+            $lte: endDate
+          }
+        }
+      }
+    ]);
+
+    // Send the result as a JSON response
+    console.log("result",result)
+    res.json(result);
+    
+
+  } catch (error) {
+    console.error("Error fetching yearly data:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
 
 const fetchDataByDateRange = async (req, res) => {
   try {
@@ -620,7 +846,8 @@ const fetchDataByDateRange = async (req, res) => {
           palletsOut: 1,
           addedAt: 1,
           palletsCount: "$loadDetails.palletsCount",
-          perPalletCost: "$loadDetails.perPalletCost"
+          perPalletCost: "$loadDetails.perPalletCost",
+          total: "$total" 
         },
       },
       // Filter data for the provided date range
@@ -768,7 +995,11 @@ module.exports = {
   fetchDailyData,
   fetchWeeklyData,
   fetchByCategory,
+  fetchByLoadNumber,
+  fetchBySKU,
+  fetchByBrand,
   fetchMonthlyData,
+  fetchYearlyData,
   fetchDataByDateRange,
   recentLoadFetch,
   getTotalLoadsCount,
