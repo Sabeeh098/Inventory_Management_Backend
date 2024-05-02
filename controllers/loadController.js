@@ -822,9 +822,17 @@ const fetchYearlyData = async (req, res) => {
 const fetchDataByDateRange = async (req, res) => {
   try {
     const { startDate, endDate } = req.body;
-
+    console.log("Received start date:", startDate);
+    console.log("Received end date:", endDate);
   
-    console.log("Request body:", req.body); // Log the request body
+    // Convert received dates to Date objects
+    const startDateUTC = new Date(startDate);
+    const endDateUTC = new Date(endDate);
+    console.log("Converted start date to UTC:", startDateUTC);
+    console.log("Converted end date to UTC:", endDateUTC);
+
+    // Adjust endDateUTC to include the entire end date
+    endDateUTC.setDate(endDateUTC.getDate() + 1);
 
     // Fetch data from the database based on the provided date range
     const result = await UsedLoads.aggregate([
@@ -854,8 +862,8 @@ const fetchDataByDateRange = async (req, res) => {
       {
         $match: {
           addedAt: {
-            $gte: new Date(startDate), // Ensure startDate is treated as UTC
-            $lte: new Date(endDate) // Ensure endDate is treated as UTC
+            $gte: startDateUTC,
+            $lt: endDateUTC  // Change $lte to $lt
           }
         }
       }
@@ -868,6 +876,8 @@ const fetchDataByDateRange = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
+
 
 
 const recentLoadFetch = async(req, res) => {
